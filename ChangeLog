@@ -1,0 +1,59 @@
+2017-0X-XX	KSK Rollover
+	
+	Version 2017XXXX
+
+	a. Added source code and checksum for ICANN Keytools 2017XXXX.
+	b. Updated KSR Signer.
+	c. Updated SERIAL file.
+
+
+2016-10-14	RSSAC003 Recommendation
+
+	Version 20161014
+
+	a. Added source code and checksum for ICANN Keytools 20161012.
+	b. Added tool sha2wordlist to calculate a SHA-256 checksum and corresponding PGP 
+	   words for a file. This utility has a dependency on libbsd.so, a library providing 
+	   useful functions commonly found on BSD systems.
+	c. Updated KSK Generator.
+	d. Updated KSR Signer.
+	e. Updated SERIAL file.
+
+
+2016-05-03	ZSK Length Change
+
+	Version 20160503
+
+	a. Added source code and checksum for ICANN Keytools 20160419.
+	b. Updated KSK Generator.
+	c. Updated SERIAL file.
+
+
+2011-09-27	180 Days Warning 
+
+	Version 20110927-r600
+
+	a. Added source code and checksum for ICANN Keytools 20110921.
+	b. Updated binaries.
+
+
+2010-10-29	x509 Schema
+
+	Version 20101029-r575
+
+	a. Added source code and checksum for ICANN Keytools 20101029.
+	b. Updated binaries.
+	c. Updated utilities.
+
+
+2010-06-12	Original
+
+	Version 20100612-r482
+
+	First version.
+	
+	a. Added source code and checksum for ICANN Keytools 20100612.
+	b. Added binaries.
+	c. Added utilities.
+
+
