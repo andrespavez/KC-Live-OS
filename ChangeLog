@@ -1,10 +1,14 @@
-2017-0X-XX	KSK Rollover
+2017-04-03	KSK Rollover
 	
-	Version 2017XXXX
+	Version 20170403
 
-	a. Added source code and checksum for ICANN Keytools 2017XXXX.
+	a. Added source code and checksum for ICANN Keytools 20170403.
 	b. Updated KSR Signer.
-	c. Updated SERIAL file.
+	c. Updated printlog.
+	d. Added hsmfd-hash.
+	e. Updated /etc/localtime to UTC
+	f. Updated O/S DVD Version
+	g. Updated /etc/SERIAL file.
 
 
 2016-10-14	RSSAC003 Recommendation
@@ -17,7 +21,8 @@
 	   useful functions commonly found on BSD systems.
 	c. Updated KSK Generator.
 	d. Updated KSR Signer.
-	e. Updated SERIAL file.
+	e. Updated O/S DVD Version.
+	f. Updated /etc/SERIAL file.
 
 
 2016-05-03	ZSK Length Change
@@ -26,7 +31,8 @@
 
 	a. Added source code and checksum for ICANN Keytools 20160419.
 	b. Updated KSK Generator.
-	c. Updated SERIAL file.
+	c. Updated O/S DVD Version.
+	d. Updated /etc/SERIAL file.
 
 
 2011-09-27	180 Days Warning 
