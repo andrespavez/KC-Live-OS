@@ -16,7 +16,7 @@
 # check if automount is disable
 # make for any unix/linux distribution
 # Verify the mksqushfd version 
-# Instead of moving, copy and deleting the squasfs.img just unsquuasfs from the origial directory, them replace the old for the new.
+# Instead of moving, copy and deleting the squashfs.img just unsquashfs from the original directory, them replace the old for the new.
 #
 #
 # This program is distributed in the hope that it will be useful,
@@ -77,7 +77,7 @@ else
   echo "SHA-256 HASH of the $FEDORA_VERSION is OK"
 fi
 
-# Usig OSIRROX a more efficient way to copy the iso content
+# Using xorriso with osirrox a more efficient way to copy the iso content
 ## Mounting the Fedora Live ISO
 #mkdir $M_ISO
 #mount -o loop $FEDORA_VERSION $M_ISO
@@ -105,7 +105,7 @@ sed -i 64s/quiet/#quiet/ $M_WD/isolinux/isolinux.cfg
 # Moving the squashfs.img to current directory
 mv $M_WD/LiveOS/squashfs.img . 
 
-# Usign unsquasfs a more efficient way to copy the file system 
+# Using unsquashfs a more efficient way to copy the file system 
 # Mounting the squashfs.img
 #mkdir $M_SMNT
 #mount -o loop -t squashfs squashfs.img $M_SMNT

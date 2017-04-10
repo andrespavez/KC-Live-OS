@@ -15,8 +15,8 @@
 # wget the custom KM-SW?, and all the other files?
 # check if automount is disable
 # make for any unix/linux distribution
-# Verify the mksqushfd version 
-# Instead of moving, copy and deleting the squasfs.img just unsquashfs from the original directory, them replace the old for the new.
+# Verify the mksquashfs version 
+# Instead of moving, copy and deleting the squashfs.img just unsquashfs from the original directory, them replace the old for the new.
 #
 #
 # This program is distributed in the hope that it will be useful,
@@ -61,7 +61,7 @@ chroot $M_RFS ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
 
 # *CHANGE* #
 # for all binaries http://www.iitk.ac.in/LDP/LDP/abs/html/abs-guide.html#EX22A
-# list is a file name and chmod permision
+# list is a file name and chmod permission
 for bin in "ksrsigner 555" "printlog 755" "hsmfd-hash 755"
 do
 	set -- $bin # parses variable "bin"
