@@ -17,6 +17,7 @@
 # make for any unix/linux distribution
 # Verify the mksqushfd version 
 # Instead of moving, copy and deleting the squashfs.img just unsquashfs from the original directory, them replace the old for the new.
+# Use only one source of time and use a tool to change it
 #
 #
 # This program is distributed in the hope that it will be useful,
@@ -32,11 +33,13 @@ FEDORA_VERSION="Fedora-Workstation-Live-x86_64-25-1.3.iso"	# Current fedora live
 FEDORA_HASH="818017f42a2741cfaf20e94aecf6a63d1b995abfdaff5917df7218d0d89976a7  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256 of (Fedora-Workstation-Live-x86_64-25-1.3.iso) 
 KS_DVD=0	# SHA256 ()
 M_ISO=live-iso	# Mount folder for the iso
-M_WD=KC-2017XXXX	# Working directory to create the ISO
+M_WD=KC-20170401	# Working directory to create the ISO
 M_SMNT=squashmnt	# Mount folder for mounting squash file system
 M_SFS=squashfs		# Mount folder for squash file system
 M_RFS=rootfs		# Mount folder for root file system
-B_TIME=1493298000	# Time for squashfs https://www.epochconverter.com/ Human time (GMT): Thu, 27 Apr 2017 13:00:00 GMT
+B_TIME=1491004800       # Time for squashfs https://www.epochconverter.com/ Human time (GMT): Sat, 01 Apr 2017 00:00:00 GMT
+M_TIME=2017040100000000 # Time YYYYMMDDhhmmsscc to control the timestamps of the filesystem superblocks and other global components of the ISO file system
+F_TIME=201704010000.00  # Ext3 Filesystem time
 
 # Confirmation source: http://stackoverflow.com/questions/1885525/how-do-i-prompt-a-user-for-confirmation-in-bash-script
 echo "Warning this can be dangerous. It will use chroot command to remove packages, changes configurations, etc. So, if something is going wrong can change from your host system rather than from the Live CD image. You need to be root and execute under your own responsibility"
@@ -58,11 +61,22 @@ fi
 # ADD check VERSION
 command -v mksquashfs >/dev/null 2>&1 || { echo >&2 "Please install (with XZ support) the last squashfs-tools direct form GitHub https://github.com/squashfs-tools/squashfs-tools.git"; exit 1; }
 
+#unsquashfs version 4.3 (2014/05/12)
+#mksquashfs version 4.3-git (2014/09/12)
+
 # Checking rsync
 command -v rsync >/dev/null 2>&1 || { echo >&2 "Please install rsync"; exit 1; }
 
 # Checking xorriso
 command -v xorriso >/dev/null 2>&1 || { echo >&2 "Please install xorriso"; exit 1; }
+
+#xorriso version   :  1.4.6
+#Version timestamp :  2016.09.16.133001
+#Build timestamp   :  -none-given-
+#libisofs   in use :  1.4.6  (min. 1.4.6)
+#libburn    in use :  1.4.6  (min. 1.4.6)
+#libburn OS adapter:  internal GNU/Linux SG_IO adapter sg-linux
+#libisoburn in use :  1.4.6  (min. 1.4.6)
 
 # Checking the ISO HASH
 echo "Calculating the ISO SHA-256 HASH of the $FEDORA_VERSION"
@@ -153,12 +167,18 @@ chroot $M_RFS systemctl mask firewalld > /dev/null 2>&1
 chroot $M_RFS ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
 #ln -fs /usr/share/zoneinfo/UTC $M_RFS/etc/localtime 
 
+# Seting filesystem timestamp
+for file in $(find "$M_RFS" -mtime 0)
+do
+	touch -a -m -h -t $F_TIME $file
+done 
+
 # Umount the root file system
 umount $M_RFS
 rmdir $M_RFS
 
 # Creating the new squashfs, may want to use XZ compression
-mksquashfs $M_SFS/ squashfs.img -noappend -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
+mksquashfs $M_SFS/ squashfs.img -noappend -comp xz -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
 
 # Carefully removing the squash file system
 rm -rf $M_SFS
@@ -169,12 +189,23 @@ mv squashfs.img $M_WD/LiveOS/
 # Setting permissions for squashfs.img
 chmod 644 $M_WD/LiveOS/squashfs.img
 
-# Creating the iso
-mkisofs -J -l -r -cache-inodes --hide-rr-moved -hide-joliet-trans-tbl -input-charset utf-8 -V $M_WD -o $M_WD.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-info-table -boot-load-size 4 $M_WD
+# Change the timestamp for the modified files 
+for files in $(find "$M_WD" -mtime 0)
+do
+	touch -a -m -h -t $F_TIME $files
+done 
 
-# Carefully removing working directory
-rm -rf $M_WD
+## Creating the iso
+#xorriso -as mkisofs -joliet -full-iso9660-filenames -rational-rock \
+#	-hide-rr-moved -volid ${M_WD/-/_} -output $M_WD.iso \
+#	-eltorito-boot isolinux/isolinux.bin -eltorito-catalog isolinux/boot.cat \
+#	-no-emul-boot -boot-info-table -boot-load-size 4 \
+#	modification-date=$M_TIME \
+#	$M_WD
+#
+## Carefully removing working directory
+#rm -rf $M_WD
 
 # Checking the new iso HASH
 
-# ETC 
+# END 
