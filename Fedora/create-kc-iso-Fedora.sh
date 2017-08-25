@@ -1,10 +1,10 @@
 #!/bin/bash -x
 #
 # Creating the KC DVD ISO based on a Live CD.
-# Changes, remove, recompress it into a SquashFS image, add, hash, etc 
+# Changes, remove, recompress it into a SquashFS image, add, hash, etc
 #
 # To-do:
-# Define the path for the working directory and also for the ISO. Maybe $1 and $2 
+# Define the path for the working directory and also for the ISO. Maybe $1 and $2
 # Write the warning and consideration to run the scrip - need to be run in a Linux machine, recommendation a minimal virtual machine
 # Verify the signature with Fedora PGP
 # Sign this scrip
@@ -15,14 +15,14 @@
 # wget the custom KM-SW?, and all the other files?
 # check if automount is disable
 # make for any unix/linux distribution
-# Verify the mksqushfd version 
+# Verify the mksqushfd version
 # Instead of moving, copy and deleting the squashfs.img just unsquashfs from the original directory, them replace the old for the new.
 # Use only one source of time and use a tool to change it
 #
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 # Be sure to verify that you will have sufficient space before running the script.
 # This may require, for example, over 12.0 GiB of free space for Fedora 25 Workstation Live
@@ -30,10 +30,12 @@
 
 ROOT_UID=0	# Only users with $UID 0 have root privileges
 FEDORA_VERSION="Fedora-Workstation-Live-x86_64-25-1.3.iso"	# Current fedora live version
-FEDORA_HASH="818017f42a2741cfaf20e94aecf6a63d1b995abfdaff5917df7218d0d89976a7  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256 of (Fedora-Workstation-Live-x86_64-25-1.3.iso) 
+FEDORA_HASH="818017f42a2741cfaf20e94aecf6a63d1b995abfdaff5917df7218d0d89976a7  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256 of (Fedora-Workstation-Live-x86_64-25-1.3.iso)
 KS_DVD=0	# SHA256 ()
 M_ISO=live-iso	# Mount folder for the iso
-M_WD=KC-20170401	# Working directory to create the ISO
+DATE=20170401   # DATE=`date +%Y%m%d`
+M_WD=KC-$DATE	# Working directory to create the ISO
+SERIAL="ICANN-DNSSEC-KC-$DATE" # Serial
 M_SMNT=squashmnt	# Mount folder for mounting squash file system
 M_SFS=squashfs		# Mount folder for squash file system
 M_RFS=rootfs		# Mount folder for root file system
@@ -101,7 +103,7 @@ mkdir $M_WD
 #
 ## Coping the entire ISO
 #rsync -ar --inplace --progress $M_ISO/ $M_WD
-###cp -rdav $M_ISO/* $M_WD/ #rsync is better with progress information 
+###cp -rdav $M_ISO/* $M_WD/ #rsync is better with progress information
 #
 ## umount the ISO it not longer needed
 #umount $M_ISO
@@ -117,9 +119,9 @@ sed -i 2s/6/1/ $M_WD/isolinux/isolinux.cfg
 sed -i 64s/quiet/#quiet/ $M_WD/isolinux/isolinux.cfg
 
 # Moving the squashfs.img to current directory
-mv $M_WD/LiveOS/squashfs.img . 
+mv $M_WD/LiveOS/squashfs.img .
 
-# Using unsquashfs a more efficient way to copy the file system 
+# Using unsquashfs a more efficient way to copy the file system
 # Mounting the squashfs.img
 #mkdir $M_SMNT
 #mount -o loop -t squashfs squashfs.img $M_SMNT
@@ -132,7 +134,7 @@ mkdir $M_SFS
 #umount $M_SMNT
 #rmdir $M_SMNT
 
-unsquashfs -f -d $M_SFS squashfs.img 
+unsquashfs -f -d $M_SFS squashfs.img
 
 # Removing the squashfs.img
 rm -f squashfs.img
@@ -141,16 +143,16 @@ rm -f squashfs.img
 mkdir $M_RFS
 mount $M_SFS/LiveOS/rootfs.img $M_RFS
 
-# Edit section 
+# Edit section
 # Disabling selinux
 sed -i 7s/enforcing/disabled/ $M_RFS/etc/selinux/config
 
-# Setting network
-
-# ADD MORE
-
 # Entering to chroot environment
-# chroot $M_RFS  
+# chroot $M_RFS
+
+# Remove unnecessary packages
+chroot $M_RFS dnf -y remove firefox libreoffice-core cheese evolution gnome-contacts gnome-maps rhythmbox shotwell gnome-weather > /dev/null 2>&1
+# dnf add a timestamp inside of the RPM database making not posible to create a reproducible build
 
 # Disabling firewall
 chroot $M_RFS systemctl disable firewalld > /dev/null 2>&1
@@ -159,19 +161,57 @@ chroot $M_RFS systemctl mask firewalld > /dev/null 2>&1
 #rm -f $M_RFS/etc/systemd/system/multi-user.target.wants/firewalld.service
 #ln -s /dev/null $M_RFS/etc/systemd/system/firewalld.service
 
-# Remove unnecessary packages 
-#chroot $M_RFS dnf -y remove firefox libreoffice-core cheese evolution gnome-contacts gnome-maps rhythmbox shotwell gnome-weather > /dev/null 2>&1
-# dnf add a timestamp inside of the RPM database, ufff
+# Disabling more services
+
 
 # Changing time zone
 chroot $M_RFS ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
-#ln -fs /usr/share/zoneinfo/UTC $M_RFS/etc/localtime 
+#ln -fs /usr/share/zoneinfo/UTC $M_RFS/etc/localtime
+
+# Setting network
+
+
+
+echo -e "192.168.0.2 \t hsm" >> $M_RFS/etc/hosts
+
+# AEP Software
+install -m 755 -d $M_RFS/opt/Keyper
+install -m 755 -d $M_RFS/opt/Keyper/bin
+install -m 755 -d $M_RFS/opt/Keyper/PKCS11Provider
+install -m 755 -d $M_RFS/opt/Keyper/docs
+install -m 555 ./aep/bin/*              $M_RFS/opt/Keyper/bin
+install -m 444 ./aep/PKCS11Provider/*   $M_RFS/opt/Keyper/PKCS11Provider
+install -m 444 ./aep/docs/*             $M_RFS/opt/Keyper/docs
+
+# ICANN Software & Scripts
+install -m 755 -d $M_RFS/opt/icann
+install -m 755 -d $M_RFS/opt/icann/bin
+install -m 755 -d $M_RFS/opt/icann/dist
+install -m 555 ./icann/bin/* $M_RFS/opt/icann/bin
+install -m 555 ./icann/dist/* $M_RFS/opt/icann/dist
+
+# DNSSEC Configurations Files
+install -m 755 -d $M_RFS/opt/dnssec
+install -m 444 ./dnssec/fixenv      $M_RFS/opt/dnssec
+install -m 444 ./dnssec/machine     $M_RFS/opt/dnssec
+install -m 444 ./dnssec/*.hsmconfig $M_RFS/opt/dnssec
+
+# Profile
+# File created as ROOT
+echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $M_RFS/etc/profile.d/kc.sh
+
+# Serial
+# File created as ROOT
+echo "Serial: $SERIAL"  >>  $M_RFS/etc/SERIAL
+
+# ADD MORE
+
 
 # Seting filesystem timestamp
 for file in $(find "$M_RFS" -mtime 0)
 do
 	touch -a -m -h -t $F_TIME $file
-done 
+done
 
 # Umount the root file system
 umount $M_RFS
@@ -184,28 +224,28 @@ mksquashfs $M_SFS/ squashfs.img -noappend -comp xz -mkfs-fixed-time $B_TIME -con
 rm -rf $M_SFS
 
 # Moving the squashfs.img to working directory
-mv squashfs.img $M_WD/LiveOS/ 
+mv squashfs.img $M_WD/LiveOS/
 
 # Setting permissions for squashfs.img
 chmod 644 $M_WD/LiveOS/squashfs.img
 
-# Change the timestamp for the modified files 
+# Change the timestamp for the modified files
 for files in $(find "$M_WD" -mtime 0)
 do
 	touch -a -m -h -t $F_TIME $files
-done 
+done
 
 ## Creating the iso
-#xorriso -as mkisofs -joliet -full-iso9660-filenames -rational-rock \
-#	-hide-rr-moved -volid ${M_WD/-/_} -output $M_WD.iso \
-#	-eltorito-boot isolinux/isolinux.bin -eltorito-catalog isolinux/boot.cat \
-#	-no-emul-boot -boot-info-table -boot-load-size 4 \
-#	modification-date=$M_TIME \
-#	$M_WD
-#
+xorriso -as mkisofs -joliet -full-iso9660-filenames -rational-rock \
+	-hide-rr-moved -volid ${M_WD/-/_} -output $M_WD.iso \
+	-eltorito-boot isolinux/isolinux.bin -eltorito-catalog isolinux/boot.cat \
+	-no-emul-boot -boot-info-table -boot-load-size 4 \
+	modification-date=$M_TIME \
+	$M_WD
+
 ## Carefully removing working directory
-#rm -rf $M_WD
+rm -rf $M_WD
 
 # Checking the new iso HASH
 
-# END 
+# END
