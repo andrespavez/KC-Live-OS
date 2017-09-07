@@ -41,7 +41,7 @@ M_SFS=squashfs		# Mount folder for squash file system
 M_RFS=rootfs		# Mount folder for root file system
 B_TIME=$(date --date="$DATE" +%s)  # Time for squashfs EPOCH with UTC and 00:00:00
 M_TIME="${DATE}00000000" # Time YYYYMMDDhhmmsscc to control the timestamps of the filesystem superblocks and other global components of the ISO file system
-F_TIME="${DATE}}0000.00"  # Ext3 Filesystem time
+F_TIME="${DATE}0000.00"  # Ext3 Filesystem time
 
 # Confirmation source: http://stackoverflow.com/questions/1885525/how-do-i-prompt-a-user-for-confirmation-in-bash-script
 echo "Warning this can be dangerous. It will use chroot command to remove packages, changes configurations, etc. So, if something is going wrong can change from your host system rather than from the Live CD image. You need to be root and execute under your own responsibility"
@@ -65,9 +65,6 @@ command -v mksquashfs >/dev/null 2>&1 || { echo >&2 "Please install (with XZ sup
 
 #unsquashfs version 4.3 (2014/05/12)
 #mksquashfs version 4.3-git (2014/09/12)
-
-# Checking rsync
-command -v rsync >/dev/null 2>&1 || { echo >&2 "Please install rsync"; exit 1; }
 
 # Checking xorriso
 command -v xorriso >/dev/null 2>&1 || { echo >&2 "Please install xorriso"; exit 1; }
@@ -93,21 +90,9 @@ else
   echo "SHA-256 HASH of the $DEBIAN_VERSION is OK"
 fi
 
-# Using xorriso with osirrox a more efficient way to copy the iso content
-## Mounting the Live ISO
-#mkdir $M_ISO
-#mount -o loop $DEBIAN_VERSION $M_ISO
-#
+# Using xorriso with osirrox a more efficient way to copy the iso content#
 # Creating the work directory
 mkdir $M_WD
-#
-## Coping the entire ISO
-#rsync -ar --inplace --progress $M_ISO/ $M_WD
-###cp -rdav $M_ISO/* $M_WD/ #rsync is better with progress information
-#
-## umount the ISO it not longer needed
-#umount $M_ISO
-#rmdir $M_ISO
 
 xorriso -osirrox on -indev $DEBIAN_VERSION -extract / $M_WD
 
@@ -125,17 +110,7 @@ sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nosound
 mv $M_WD/live/filesystem.squashfs .
 
 # Using unsquashfs a more efficient way to copy the file system
-# Mounting the squashfs.img
-#mkdir $M_SMNT
-#mount -o loop -t squashfs squashfs.img $M_SMNT
-#
-# Copy squashfs file system
 mkdir $M_SFS
-#rsync -ar --inplace --progress $M_SMNT/ $M_SFS
-#
-# Umount the squashfs.img it not longer needed
-#umount $M_SMNT
-#rmdir $M_SMNT
 
 unsquashfs -f -d $M_SFS filesystem.squashfs
 
