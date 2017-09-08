@@ -27,23 +27,23 @@
 # Be sure to verify that you will have sufficient space before running the script.
 # This may require, for example, over 12.0 GiB of free space for full live system
 
+DATE=20171011 #`date +%Y%m%d` # Current date
+export SOURCE_DATE_EPOCH="$(date --utc --date="$DATE" +%s)" # defined by reproducible-builds.org.
 
 ROOT_UID=0	# Only users with $UID 0 have root privileges
 DEBIAN_VERSION="debian-live-9.1.0-amd64-xfce.iso"	# Current Debian XFCE live version
 DEBIAN_HASH="54a422b740c3c3944931d547f38478bbc62843988448177da1586d65d02fc49f  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256
 KS_DVD=0	# SHA256 ()
 M_ISO=live-iso	# Mount folder for the iso
-DATE=20171011 #`date +%Y%m%d` # Current date
 M_WD=KC-$DATE	# Working directory to create the ISO
 SERIAL="ICANN-DNSSEC-KC-$DATE" # Serial
-M_SMNT=squashmnt	# Mount folder for mounting squash file system
-M_SFS=squashfs		# Mount folder for squash file system
-M_RFS=rootfs		# Mount folder for root file system
-B_TIME=$(date --date="$DATE" +%s)  # Time for squashfs EPOCH with UTC and 00:00:00
-M_TIME="${DATE}00000000" # Time YYYYMMDDhhmmsscc to control the timestamps of the filesystem superblocks and other global components of the ISO file system
-F_TIME="${DATE}0000.00"  # Ext3 Filesystem time
+#M_SMNT=squashmnt	# Mount folder for mounting squash file system
+SFR=squashfs-root		# Mount folder for squash root file system
+#B_TIME=$(date --date="$DATE" +%s)  # Time for squashfs EPOCH with UTC and 00:00:00
+#M_TIME="${DATE}00000000" # Time YYYYMMDDhhmmsscc to control the timestamps of the filesystem superblocks and other global components of the ISO file system
+#F_TIME="${DATE}0000.00"  # Ext3 Filesystem time
 
-# Confirmation source: http://stackoverflow.com/questions/1885525/how-do-i-prompt-a-user-for-confirmation-in-bash-script
+# Confirmation source: http://stackoveM_SFlow.com/questions/1885525/how-do-i-prompt-a-user-for-confirmation-in-bash-script
 echo "Warning this can be dangerous. It will use chroot command to remove packages, changes configurations, etc. So, if something is going wrong can change from your host system rather than from the Live CD image. You need to be root and execute under your own responsibility"
 read -p "Are you sure to continue [y/N]? " -n 1 -r
 echo    # Move to a new line
@@ -59,7 +59,7 @@ then
   exit 1
 fi
 
-# Checking squashfs-tools source: http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
+# Checking squashfs-tools source: http://stackoveM_SFlow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
 # ADD check VERSION
 command -v mksquashfs >/dev/null 2>&1 || { echo >&2 "Please install (with XZ support) the last squashfs-tools direct form GitHub https://github.com/squashfs-tools/squashfs-tools.git"; exit 1; }
 
@@ -110,121 +110,119 @@ sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nosound
 mv $M_WD/live/filesystem.squashfs .
 
 # Using unsquashfs a more efficient way to copy the file system
-mkdir $M_SFS
-
-unsquashfs -f -d $M_SFS filesystem.squashfs
+# By default unsquashfs in squashfs-root folder
+unsquashfs filesystem.squashfs
 
 # Removing the squashfs.img
 rm -f filesystem.squashfs
 
-exit 1
-# Mounting the root root file system
-mkdir $M_RFS
-mount $M_SFS/LiveOS/rootfs.img $M_RFS
-
 # Edit section
-# Disabling selinux
-sed -i 7s/enforcing/disabled/ $M_RFS/etc/selinux/config
 
 # Entering to chroot environment
-# chroot $M_RFS
+# chroot $SFR
 
 # Remove unnecessary packages
-chroot $M_RFS dnf -y remove firefox libreoffice-core cheese evolution gnome-contacts gnome-maps rhythmbox shotwell gnome-weather > /dev/null 2>&1
-# dnf add a timestamp inside of the RPM database making not posible to create a reproducible build
-
-# Disabling firewall
-chroot $M_RFS systemctl disable firewalld > /dev/null 2>&1
-chroot $M_RFS systemctl mask firewalld > /dev/null 2>&1
-#rm -f $M_RFS/etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service
-#rm -f $M_RFS/etc/systemd/system/multi-user.target.wants/firewalld.service
-#ln -s /dev/null $M_RFS/etc/systemd/system/firewalld.service
+# !!!Check timestamp inside of the apt database to create a reproducible build
 
 # Disabling more services
 
-
-# Changing time zone
-chroot $M_RFS ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
-#ln -fs /usr/share/zoneinfo/UTC $M_RFS/etc/localtime
+# Changing time zone by defaul is UTC
+#chroot $SFR ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
+#ln -fs /usr/share/zoneinfo/UTC $SFR/etc/localtime
 
 # Setting network
+echo -e "192.168.0.2 \t hsm" >> $SFR/etc/hosts
+# eth0
+echo -e "\n auto eth0" >> $SFR/etc/network/interfaces
+echo -e "iface eth0 inet static" >> $SFR/etc/network/interfaces
+echo -e "\t address 192.168.0.1" >> $SFR/etc/network/interfaces
+echo -e "\t netmask 255.255.255.0" >> $SFR/etc/network/interfaces
+echo -e "\t network 192.168.0.0" >> $SFR/etc/network/interfaces
+echo -e "\t broadcast 192.168.0.255" >> $SFR/etc/network/interfaces
+echo -e "\t gateway 192.168.0.254" >> $SFR/etc/network/interfaces
 
-
-
-echo -e "192.168.0.2 \t hsm" >> $M_RFS/etc/hosts
+# eth1q
+echo -e "\n auto eth1" >> $SFR/etc/network/interfaces
+echo -e "iface eth1 inet static" >> $SFR/etc/network/interfaces
+echo -e "\t address 192.168.0.3" >> $SFR/etc/network/interfaces
+echo -e "\t netmask 255.255.255.0" >> $SFR/etc/network/interfaces
+echo -e "\t network 192.168.0.0" >> $SFR/etc/network/interfaces
+echo -e "\t broadcast 192.168.0.255" >> $SFR/etc/network/interfaces
+echo -e "\t gateway 192.168.0.254" >> $SFR/etc/network/interfaces
 
 # AEP Software
-install -m 755 -d $M_RFS/opt/Keyper
-install -m 755 -d $M_RFS/opt/Keyper/bin
-install -m 755 -d $M_RFS/opt/Keyper/PKCS11Provider
-install -m 755 -d $M_RFS/opt/Keyper/docs
-install -m 555 ./aep/bin/*              $M_RFS/opt/Keyper/bin
-install -m 444 ./aep/PKCS11Provider/*   $M_RFS/opt/Keyper/PKCS11Provider
-install -m 444 ./aep/docs/*             $M_RFS/opt/Keyper/docs
+# Check install -p, --preserve-timestamps
+
+#install -m 755 -d $SFR/opt/Keyper
+#install -m 755 -d $SFR/opt/Keyper/bin
+#install -m 755 -d $SFR/opt/Keyper/PKCS11Provider
+#install -m 755 -d $SFR/opt/Keyper/docs
+#install -m 555 ./aep/bin/*              $SFR/opt/Keyper/bin
+#install -m 444 ./aep/PKCS11Provider/*   $SFR/opt/Keyper/PKCS11Provider
+#install -m 444 ./aep/docs/*             $SFR/opt/Keyper/docs
 
 # ICANN Software & Scripts
-install -m 755 -d $M_RFS/opt/icann
-install -m 755 -d $M_RFS/opt/icann/bin
-install -m 755 -d $M_RFS/opt/icann/dist
-install -m 555 ./icann/bin/* $M_RFS/opt/icann/bin
-install -m 555 ./icann/dist/* $M_RFS/opt/icann/dist
+#install -m 755 -d $SFR/opt/icann
+#install -m 755 -d $SFR/opt/icann/bin
+#install -m 755 -d $SFR/opt/icann/dist
+#install -m 555 ./icann/bin/* $SFR/opt/icann/bin
+#install -m 555 ./icann/dist/* $SFR/opt/icann/dist
 
 # DNSSEC Configurations Files
-install -m 755 -d $M_RFS/opt/dnssec
-install -m 444 ./dnssec/fixenv      $M_RFS/opt/dnssec
-install -m 444 ./dnssec/machine     $M_RFS/opt/dnssec
-install -m 444 ./dnssec/*.hsmconfig $M_RFS/opt/dnssec
+#install -m 755 -d $SFR/opt/dnssec
+#install -m 444 ./dnssec/fixenv      $SFR/opt/dnssec
+#install -m 444 ./dnssec/machine     $SFR/opt/dnssec
+#install -m 444 ./dnssec/*.hsmconfig $SFR/opt/dnssec
 
 # Profile
 # File created as ROOT
-echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $M_RFS/etc/profile.d/kc.sh
+echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d/kc.sh
 
 # Serial
 # File created as ROOT
-echo "Serial: $SERIAL"  >>  $M_RFS/etc/SERIAL
+echo "Serial: $SERIAL"  >>  $SFR/etc/SERIAL
 
 # ADD MORE
 
 
 # Seting filesystem timestamp
-for file in $(find "$M_RFS" -mtime 0)
-do
-	touch -a -m -h -t $F_TIME $file
-done
-
-# Umount the root file system
-umount $M_RFS
-rmdir $M_RFS
+#for file in $(find "$SFR" -mtime 0)
+#do
+#	touch -a -m -h -t $F_TIME $file
+#done
 
 # Creating the new squashfs, may want to use XZ compression
-mksquashfs $M_SFS/ squashfs.img -noappend -comp xz -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
+mksquashfs $SFR/ filesystem.squashfs -noappend -comp xz # -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
 
 # Carefully removing the squash file system
-rm -rf $M_SFS
+rm -M_SF $SFR
 
-# Moving the squashfs.img to working directory
-mv squashfs.img $M_WD/LiveOS/
+# Moving the squashfs to working directory
+mv filesystem.squashfs $M_WD/live/
 
 # Setting permissions for squashfs.img
-chmod 644 $M_WD/LiveOS/squashfs.img
+chmod 644 $M_WD/live/filesystem.squashfs
 
 # Change the timestamp for the modified files
-for files in $(find "$M_WD" -mtime 0)
-do
-	touch -a -m -h -t $F_TIME $files
-done
+#for files in $(find "$M_WD" -mtime 0)
+#do
+#	touch -a -m -h -t $F_TIME $files
+#done
 
 ## Creating the iso
-xorriso -as mkisofs -joliet -full-iso9660-filenames -rational-rock \
-	-hide-rr-moved -volid ${M_WD/-/_} -output $M_WD.iso \
-	-eltorito-boot isolinux/isolinux.bin -eltorito-catalog isolinux/boot.cat \
-	-no-emul-boot -boot-info-table -boot-load-size 4 \
-	modification-date=$M_TIME \
-	$M_WD
+xorriso -outdev $M_WD.iso -volid ${M_WD/-/_} \
+ -map $M_WD / -chmod 0755 / -- -boot_image isolinux dir=/isolinux \
+ -boot_image isolinux system_area=/usr/lib/ISOLINUX/isohdpfx.bin \
+ -boot_image any next -boot_image any efi_path=boot/grub/efi.img \
+ -boot_image isolinux partition_entry=gpt_basdat
 
 ## Carefully removing working directory
-rm -rf $M_WD
+rm -M_SF $M_WD
 
 # Checking the new iso HASH
 
 # END
+#isolinux
+#mksquashfs-tools
+#xorriso
+#libbsd-dev
