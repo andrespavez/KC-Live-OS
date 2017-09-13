@@ -29,6 +29,7 @@
 
 DATE=20171011 #`date +%Y%m%d` # Current date
 export SOURCE_DATE_EPOCH="$(date --utc --date="$DATE" +%s)" # defined by reproducible-builds.org.
+export SOURCE_DATE_YYYYMMDD="$(date --utc --date="$DATE" +%Y%m%d)"
 
 ROOT_UID=0	# Only users with $UID 0 have root privileges
 DEBIAN_VERSION="debian-live-9.1.0-amd64-xfce.iso"	# Current Debian XFCE live version
@@ -98,13 +99,13 @@ xorriso -osirrox on -indev $DEBIAN_VERSION -extract / $M_WD
 
 # Changing isolinux.cfg
 # Reducing the boot menu time
-sed -i 's/^timeout .*$/timeout 100/' $M_WD/isolinux/isolinux.cfg
+sed -i 's/^timeout .*$/timeout 1/' $M_WD/isolinux/isolinux.cfg
 
 # Adding kerner options
-sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nosound nobluetooth/' $M_WD/isolinux/menu.cfg
+sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence timezone=Etc/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' $M_WD/isolinux/menu.cfg
 
 # Updating also grub.cfg
-sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nosound nobluetooth/' $M_WD/boot/grub/grub.cfg
+sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence timezone=Etc/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' $M_WD/boot/grub/grub.cfg
 
 # Moving the squashfs.img to current directory
 mv $M_WD/live/filesystem.squashfs .
@@ -121,34 +122,54 @@ rm -f filesystem.squashfs
 # Entering to chroot environment
 # chroot $SFR
 
-# Remove unnecessary packages
-# !!!Check timestamp inside of the apt database to create a reproducible build
+
 
 # Disabling more services
+echo "Lower systemd's DefaultTimeoutStopSec"
+sed -i --regexp-extended \
+    's/^#DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=5s/' \
+    $SFR/etc/systemd/system.conf
 
-# Changing time zone by defaul is UTC
-#chroot $SFR ln -fs /usr/share/zoneinfo/UTC /etc/localtime > /dev/null 2>&1
-#ln -fs /usr/share/zoneinfo/UTC $SFR/etc/localtime
+echo "Disabling ssh-agent"
+sed -i 's/^use-ssh-agent/#use-ssh-agent/' $SFR/etc/X11/Xsession.options
+
+# Remove unnecessary packages
+# !!!Check timestamp inside of the apt database to create a reproducible build
+echo "Removing unwanted packages"
+cat << EOF | chroot $SFR
+apt-get --yes purge q'^aspell*' '^firefox-esr*' '^hunspell*' '^libreoffice*' '^myspell-*'
+EOF
+
+### Deinstall dependencies of the just removed packages
+cat << EOF | chroot $SFR
+apt-get --yes --purge autoremove
+EOF
 
 # Setting network
-echo -e "192.168.0.2 \t hsm" >> $SFR/etc/hosts
-# eth0
-echo -e "\n auto eth0" >> $SFR/etc/network/interfaces
-echo -e "iface eth0 inet static" >> $SFR/etc/network/interfaces
-echo -e "\t address 192.168.0.1" >> $SFR/etc/network/interfaces
-echo -e "\t netmask 255.255.255.0" >> $SFR/etc/network/interfaces
-echo -e "\t network 192.168.0.0" >> $SFR/etc/network/interfaces
-echo -e "\t broadcast 192.168.0.255" >> $SFR/etc/network/interfaces
-echo -e "\t gateway 192.168.0.254" >> $SFR/etc/network/interfaces
+echo -e "192.168.0.2 \thsm" >> $SFR/etc/hosts
 
-# eth1q
-echo -e "\n auto eth1" >> $SFR/etc/network/interfaces
-echo -e "iface eth1 inet static" >> $SFR/etc/network/interfaces
-echo -e "\t address 192.168.0.3" >> $SFR/etc/network/interfaces
-echo -e "\t netmask 255.255.255.0" >> $SFR/etc/network/interfaces
-echo -e "\t network 192.168.0.0" >> $SFR/etc/network/interfaces
-echo -e "\t broadcast 192.168.0.255" >> $SFR/etc/network/interfaces
-echo -e "\t gateway 192.168.0.254" >> $SFR/etc/network/interfaces
+rm -f $SFR/etc/network/interfaces.d/setup
+
+cat > $SFR/etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+# eth0
+auto eth0
+iface eth0 inet static
+  address 192.168.0.1
+  netmask 255.255.255.0
+  network 192.168.0.0
+  broadcast 192.168.0.255
+  gateway 192.168.0.254
+# eth1
+auto eth1
+iface eth1 inet static
+  address 192.168.0.3
+  netmask 255.255.255.0
+  network 192.168.0.0
+  broadcast 192.168.0.255
+  gateway 192.168.0.254
+EOF
 
 # AEP Software
 # Check install -p, --preserve-timestamps
@@ -182,7 +203,7 @@ echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d
 # File created as ROOT
 echo "Serial: $SERIAL"  >>  $SFR/etc/SERIAL
 
-# ADD MORE
+# ADD MORE CUSTOM XFCE
 
 
 # Seting filesystem timestamp
@@ -217,7 +238,7 @@ xorriso -outdev $M_WD.iso -volid ${M_WD/-/_} \
  -boot_image isolinux partition_entry=gpt_basdat
 
 ## Carefully removing working directory
-rm -M_SF $M_WD
+rm -rf $M_WD
 
 # Checking the new iso HASH
 
