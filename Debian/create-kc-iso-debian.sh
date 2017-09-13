@@ -102,10 +102,14 @@ xorriso -osirrox on -indev $DEBIAN_VERSION -extract / $M_WD
 sed -i 's/^timeout .*$/timeout 1/' $M_WD/isolinux/isolinux.cfg
 
 # Adding kerner options
-sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence timezone=Etc/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' $M_WD/isolinux/menu.cfg
+sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence \
+timezone=Etc\/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' \
+$M_WD/isolinux/menu.cfg
 
 # Updating also grub.cfg
-sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence timezone=Etc/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' $M_WD/boot/grub/grub.cfg
+sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence \
+timezone=Etc\/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' \
+$M_WD/boot/grub/grub.cfg
 
 # Moving the squashfs.img to current directory
 mv $M_WD/live/filesystem.squashfs .
@@ -137,7 +141,7 @@ sed -i 's/^use-ssh-agent/#use-ssh-agent/' $SFR/etc/X11/Xsession.options
 # !!!Check timestamp inside of the apt database to create a reproducible build
 echo "Removing unwanted packages"
 cat << EOF | chroot $SFR
-apt-get --yes purge q'^aspell*' '^firefox-esr*' '^hunspell*' '^libreoffice*' '^myspell-*'
+apt-get --yes purge '^aspell*' '^firefox-esr*' '^hunspell*' '^libreoffice*' '^myspell-*'
 EOF
 
 ### Deinstall dependencies of the just removed packages
