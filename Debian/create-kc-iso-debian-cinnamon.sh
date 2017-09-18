@@ -32,8 +32,8 @@ export SOURCE_DATE_EPOCH="$(date --utc --date="$DATE" +%s)" # defined by reprodu
 export SOURCE_DATE_YYYYMMDD="$(date --utc --date="$DATE" +%Y%m%d)"
 
 ROOT_UID=0	# Only users with $UID 0 have root privileges
-DEBIAN_VERSION="debian-live-9.1.0-amd64-xfce.iso"	# Current Debian XFCE live version
-DEBIAN_HASH="54a422b740c3c3944931d547f38478bbc62843988448177da1586d65d02fc49f  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256
+DEBIAN_VERSION="debian-live-9.1.0-amd64-cinnamon.iso"	# Current Debian Cinammon live version
+DEBIAN_HASH="f076da14065c56ae7b42aec07e501b0f2a9f43563b01d13254305e97e24f1e17  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256
 KS_DVD=0	# SHA256 ()
 M_WD=KC-$DATE	# Working directory to create the ISO
 SERIAL="ICANN-DNSSEC-KC-$DATE" # Serial
@@ -202,21 +202,16 @@ passwd -d root
 EOF
 touch $SFR/var/lib/live/config/user-setup
 
-# Root autologin in XFCE due a kernel module username=root
-echo "XFCE root auto login"
+# X root autologin due a kernel module username=root
+echo "X root auto login"
 sed -i --regexp-extended \
     '11s/.*/#&/' \
 $SFR/etc/pam.d/lightdm-autologin
 
-# xfce4
-echo "Custom xfce4"
-# xfce unlock
-# xfce power off
-touch $SFR/var/lib/live/config/xfce4-panel
-mkdir -p $SFR/root/.config/xfce4/xfconf/xfce-perchannel-xml
-install -p -m 644 ./.config/xfce4/xfconf/xfce-perchannel-xml/*  $SFR/root/.config/xfce4/xfconf/xfce-perchannel-xml
-mkdir -p $SFR/root/.cache/sessions
-install -p -m 644 ./.cache/sessions/*  $SFR/root/.cache/sessions
+# Cinnamon
+echo "Custom Cinnamon"
+# look touch /var/lib/live/config/xscreensaver
+
 
 # Printer
 
