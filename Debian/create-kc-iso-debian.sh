@@ -35,17 +35,17 @@ ROOT_UID=0	# Only users with $UID 0 have root privileges
 DEBIAN_VERSION="debian-live-9.1.0-amd64-xfce.iso"	# Current Debian XFCE live version
 DEBIAN_HASH="54a422b740c3c3944931d547f38478bbc62843988448177da1586d65d02fc49f  -" # the " -" is necessary for the comparative unless if "sed" is used SHA-256
 KS_DVD=0	# SHA256 ()
-M_ISO=live-iso	# Mount folder for the iso
 M_WD=KC-$DATE	# Working directory to create the ISO
 SERIAL="ICANN-DNSSEC-KC-$DATE" # Serial
-#M_SMNT=squashmnt	# Mount folder for mounting squash file system
-SFR=squashfs-root		# Mount folder for squash root file system
+SFR=squashfs-root	# Mount folder for squash root file system
 #B_TIME=$(date --date="$DATE" +%s)  # Time for squashfs EPOCH with UTC and 00:00:00
 #M_TIME="${DATE}00000000" # Time YYYYMMDDhhmmsscc to control the timestamps of the filesystem superblocks and other global components of the ISO file system
 #F_TIME="${DATE}0000.00"  # Ext3 Filesystem time
 
 # Confirmation source: http://stackoveM_SFlow.com/questions/1885525/how-do-i-prompt-a-user-for-confirmation-in-bash-script
-echo "Warning this can be dangerous. It will use chroot command to remove packages, changes configurations, etc. So, if something is going wrong can change from your host system rather than from the Live CD image. You need to be root and execute under your own responsibility"
+echo "Warning this can be dangerous. It will use chroot command to remove packages, changes configurations, etc. \
+So, if something is going wrong can change from your host system rather than from the Live CD image. \
+You need to be root and execute under your own responsibility"
 read -p "Are you sure to continue [y/N]? " -n 1 -r
 echo    # Move to a new line
 if [[ ! $REPLY =~ ^[Yy]$ ]]
@@ -62,7 +62,8 @@ fi
 
 # Checking squashfs-tools source: http://stackoveM_SFlow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
 # ADD check VERSION
-command -v mksquashfs >/dev/null 2>&1 || { echo >&2 "Please install (with XZ support) the last squashfs-tools direct form GitHub https://github.com/squashfs-tools/squashfs-tools.git"; exit 1; }
+command -v mksquashfs >/dev/null 2>&1 || { echo >&2 "Please install (with XZ support) the last squashfs-tools \
+direct form GitHub https://github.com/squashfs-tools/squashfs-tools.git"; exit 1; }
 
 #unsquashfs version 4.3 (2014/05/12)
 #mksquashfs version 4.3-git (2014/09/12)
@@ -93,22 +94,30 @@ fi
 
 # Using xorriso with osirrox a more efficient way to copy the iso content#
 # Creating the work directory
+echo "Coping the iso"
 mkdir $M_WD
 
 xorriso -osirrox on -indev $DEBIAN_VERSION -extract / $M_WD
 
 # Changing isolinux.cfg
-# Reducing the boot menu time
+echo "Reducing the boot menu time"
+
 sed -i 's/^timeout .*$/timeout 1/' $M_WD/isolinux/isolinux.cfg
 
-# Adding kerner options
-sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence \
-timezone=Etc\/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' \
+echo "Adding kerner options"
+sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth \
+timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia \
+modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,\
+snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,\
+snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
 $M_WD/isolinux/menu.cfg
 
 # Updating also grub.cfg
-sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence \
-timezone=Etc\/UTC noautologin live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr/' \
+sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth \
+timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia \
+modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,\
+snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,\
+snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
 $M_WD/boot/grub/grub.cfg
 
 # Moving the squashfs.img to current directory
@@ -116,16 +125,106 @@ mv $M_WD/live/filesystem.squashfs .
 
 # Using unsquashfs a more efficient way to copy the file system
 # By default unsquashfs in squashfs-root folder
+echo "unsquashfs the file system"
 unsquashfs filesystem.squashfs
 
 # Removing the squashfs.img
 rm -f filesystem.squashfs
 
 # Edit section
+echo "Setting network"
 
-# Entering to chroot environment
-# chroot $SFR
+echo -e "192.168.0.2 \thsm" >> $SFR/etc/hosts
 
+rm -f $SFR/etc/network/interfaces.d/setup
+
+cat > $SFR/etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+  address 192.168.0.1
+  netmask 255.255.255.0
+  network 192.168.0.0
+  broadcast 192.168.0.255
+  gateway 192.168.0.254
+
+auto eth1
+iface eth1 inet static
+  address 192.168.0.3
+  netmask 255.255.255.0
+  network 192.168.0.0
+  broadcast 192.168.0.255
+  gateway 192.168.0.254
+EOF
+
+# AEP Software
+# Check install -p, --preserve-timestamps
+echo "Instaling AEP Software"
+install -m 755 -d $SFR/opt/Keyper
+install -m 755 -d $SFR/opt/Keyper/bin
+install -m 755 -d $SFR/opt/Keyper/PKCS11Provider
+install -m 755 -d $SFR/opt/Keyper/docs
+install -m 755 -d $SFR/opt/Keyper/win32
+install -p -m 555 ./opt/Keyper/bin/*              $SFR/opt/Keyper/bin
+install -p -m 444 ./opt/Keyper/PKCS11Provider/*   $SFR/opt/Keyper/PKCS11Provider
+install -p -m 444 ./opt/Keyper/docs/*             $SFR/opt/Keyper/docs
+install -p -m 444 ./opt/Keyper/win32/*            $SFR/opt/Keyper/win32
+
+# ICANN Software & Scripts
+echo "Instaling ICANN Software and Scripts"
+install -m 755 -d $SFR/opt/icann
+install -m 755 -d $SFR/opt/icann/bin
+install -m 755 -d $SFR/opt/icann/dist
+install -p -m 555 ./opt/icann/bin/* $SFR/opt/icann/bin
+install -p -m 555 ./opt/icann/dist/* $SFR/opt/icann/dist
+
+# DNSSEC Configurations Files
+echo "Instaling DNSSEC Configurations Files"
+install -m 755 -d $SFR/opt/dnssec
+install -p -m 444 ./opt/dnssec/fixenv      $SFR/opt/dnssec
+install -p -m 444 ./opt/dnssec/machine     $SFR/opt/dnssec
+install -p -m 444 ./opt/dnssec/*.hsmconfig $SFR/opt/dnssec
+
+# Profile
+# File created as ROOT
+echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d/kc.sh
+
+# Serial
+# File created as ROOT
+echo "Serial: $SERIAL"  >>  $SFR/etc/SERIAL
+
+# Seting root account with not password
+echo "root without a password"
+cat << EOF | chroot $SFR
+passwd -d root
+EOF
+touch $SFR/var/lib/live/config/user-setup
+
+# Root autologin in XFCE due a kernel module username=root
+echo "XFCE root auto login"
+sed -i --regexp-extended \
+    '11s/.*/#&/' \
+$SFR/etc/pam.d/lightdm-autologin
+
+# xfce4
+echo "Custom xfce4"
+# xfce unlock
+# xfce power off
+touch $SFR/var/lib/live/config/xfce4-panel
+mkdir -p $SFR/root/.config/xfce4/xfconf/xfce-perchannel-xml
+install -p -m 644 ./.config/xfce4/xfconf/xfce-perchannel-xml/*  $SFR/root/.config/xfce4/xfconf/xfce-perchannel-xml
+mkdir -p $SFR/root/.cache/sessions
+install -p -m 644 ./.cache/sessions/*  $SFR/root/.cache/sessions
+
+# Printer
+
+
+# Mount Point
+mkdir -p $SFR/media/HSMFD
+mkdir -p $SFR/media/HSMFD_
+mkdir -p $SFR/media/KSR
 
 
 # Disabling more services
@@ -141,73 +240,14 @@ sed -i 's/^use-ssh-agent/#use-ssh-agent/' $SFR/etc/X11/Xsession.options
 # !!!Check timestamp inside of the apt database to create a reproducible build
 echo "Removing unwanted packages"
 cat << EOF | chroot $SFR
-apt-get --yes purge '^aspell*' '^firefox-esr*' '^hunspell*' '^libreoffice*' '^myspell-*'
+apt-get --yes purge '^firefox-esr*' '^libreoffice*' '^aspell*' '^hunspell*' '^myspell*'
 EOF
 
-### Deinstall dependencies of the just removed packages
+# Deinstall dependencies of the just removed packages
+echo "Removing dependencies"
 cat << EOF | chroot $SFR
 apt-get --yes --purge autoremove
 EOF
-
-# Setting network
-echo -e "192.168.0.2 \thsm" >> $SFR/etc/hosts
-
-rm -f $SFR/etc/network/interfaces.d/setup
-
-cat > $SFR/etc/network/interfaces << EOF
-auto lo
-iface lo inet loopback
-# eth0
-auto eth0
-iface eth0 inet static
-  address 192.168.0.1
-  netmask 255.255.255.0
-  network 192.168.0.0
-  broadcast 192.168.0.255
-  gateway 192.168.0.254
-# eth1
-auto eth1
-iface eth1 inet static
-  address 192.168.0.3
-  netmask 255.255.255.0
-  network 192.168.0.0
-  broadcast 192.168.0.255
-  gateway 192.168.0.254
-EOF
-
-# AEP Software
-# Check install -p, --preserve-timestamps
-
-#install -m 755 -d $SFR/opt/Keyper
-#install -m 755 -d $SFR/opt/Keyper/bin
-#install -m 755 -d $SFR/opt/Keyper/PKCS11Provider
-#install -m 755 -d $SFR/opt/Keyper/docs
-#install -m 555 ./aep/bin/*              $SFR/opt/Keyper/bin
-#install -m 444 ./aep/PKCS11Provider/*   $SFR/opt/Keyper/PKCS11Provider
-#install -m 444 ./aep/docs/*             $SFR/opt/Keyper/docs
-
-# ICANN Software & Scripts
-#install -m 755 -d $SFR/opt/icann
-#install -m 755 -d $SFR/opt/icann/bin
-#install -m 755 -d $SFR/opt/icann/dist
-#install -m 555 ./icann/bin/* $SFR/opt/icann/bin
-#install -m 555 ./icann/dist/* $SFR/opt/icann/dist
-
-# DNSSEC Configurations Files
-#install -m 755 -d $SFR/opt/dnssec
-#install -m 444 ./dnssec/fixenv      $SFR/opt/dnssec
-#install -m 444 ./dnssec/machine     $SFR/opt/dnssec
-#install -m 444 ./dnssec/*.hsmconfig $SFR/opt/dnssec
-
-# Profile
-# File created as ROOT
-echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d/kc.sh
-
-# Serial
-# File created as ROOT
-echo "Serial: $SERIAL"  >>  $SFR/etc/SERIAL
-
-# ADD MORE CUSTOM XFCE
 
 
 # Seting filesystem timestamp
@@ -217,6 +257,7 @@ echo "Serial: $SERIAL"  >>  $SFR/etc/SERIAL
 #done
 
 # Creating the new squashfs, may want to use XZ compression
+echo "Creating the new squashfs"
 mksquashfs $SFR/ filesystem.squashfs -noappend -comp xz # -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
 
 # Carefully removing the squash file system
@@ -235,6 +276,7 @@ chmod 644 $M_WD/live/filesystem.squashfs
 #done
 
 ## Creating the iso
+echo "Creating the iso"
 xorriso -outdev $M_WD.iso -volid ${M_WD/-/_} \
  -map $M_WD / -chmod 0755 / -- -boot_image isolinux dir=/isolinux \
  -boot_image isolinux system_area=/usr/lib/ISOLINUX/isohdpfx.bin \
