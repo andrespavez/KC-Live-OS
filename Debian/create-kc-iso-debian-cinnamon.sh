@@ -105,19 +105,13 @@ echo "Reducing the boot menu time"
 sed -i 's/^timeout .*$/timeout 1/' $M_WD/isolinux/isolinux.cfg
 
 echo "Adding kerner options"
-sed -i '7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth \
-timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia \
-modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,\
-snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,\
-snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
+sed -i \
+'7s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
 $M_WD/isolinux/menu.cfg
 
 # Updating also grub.cfg
-sed -i '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth \
-timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia \
-modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,\
-snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,\
-snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
+sed -i
+'27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
 $M_WD/boot/grub/grub.cfg
 
 # Moving the squashfs.img to current directory
@@ -138,7 +132,7 @@ echo -e "192.168.0.2 \thsm" >> $SFR/etc/hosts
 
 rm -f $SFR/etc/network/interfaces.d/setup
 
-cat > $SFR/etc/network/interfaces << EOF
+cat > $SFR/etc/network/interfaces.d/kc-network << EOF
 auto lo
 iface lo inet loopback
 
@@ -222,7 +216,7 @@ mkdir -p $SFR/media/KSR
 echo "Lower systemd's DefaultTimeoutStopSec"
 sed -i --regexp-extended \
     's/^#DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=5s/' \
-    $SFR/etc/systemd/system.conf
+$SFR/etc/systemd/system.conf
 
 echo "Disabling ssh-agent"
 sed -i 's/^use-ssh-agent/#use-ssh-agent/' $SFR/etc/X11/Xsession.options
@@ -231,14 +225,15 @@ sed -i 's/^use-ssh-agent/#use-ssh-agent/' $SFR/etc/X11/Xsession.options
 # !!!Check timestamp inside of the apt database to create a reproducible build
 echo "Removing unwanted packages"
 cat << EOF | chroot $SFR
-apt-get --yes purge '^firefox-esr*' '^libreoffice*' '^aspell*' '^hunspell*' '^myspell*'
+apt-get --yes purge '^firefox-esr*' '^libreoffice*' '^aspell*' '^hunspell*' '^myspell*' '^task-*'
 EOF
 
 # Deinstall dependencies of the just removed packages
-echo "Removing dependencies"
-cat << EOF | chroot $SFR
-apt-get --yes --purge autoremove
-EOF
+#****Check THIS
+#echo "Removing dependencies"
+#cat << EOF | chroot $SFR
+#apt-get --yes --purge autoremove
+#EOF
 
 
 # Seting filesystem timestamp
