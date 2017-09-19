@@ -110,7 +110,7 @@ sed -i \
 $M_WD/isolinux/menu.cfg
 
 # Updating also grub.cfg
-sed -i
+sed -i \
 '27s/\bcomponents\b/& locales=en_US.UTF-8 net.ifnames=0 selinux=0 nopersistence nosound nobluetooth timezone=Etc\/UTC username=root live-media=removable STATICIP=frommedia modprobe.blacklist=pcspkr,hci_uart,btintel,btqca,btbcm,bluetooth,snd_hda_intel,snd_hda_codec_realtek,snd_soc_skl,snd_soc_skl_ipc,snd_soc_sst_ipc,snd_soc_sst_dsp,snd_hda_ext_core,snd_soc_sst_match,snd_soc_core,snd_compress,snd_hda_core,snd_pcm,snd_timer,snd,soundcore/' \
 $M_WD/boot/grub/grub.cfg
 
