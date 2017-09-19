@@ -251,7 +251,7 @@ echo "Creating the new squashfs"
 mksquashfs $SFR/ filesystem.squashfs -noappend -comp xz # -mkfs-fixed-time $B_TIME -content-fixed-time $B_TIME
 
 # Carefully removing the squash file system
-rm -M_SF $SFR
+rm -rf $SFR
 
 # Moving the squashfs to working directory
 mv filesystem.squashfs $M_WD/live/
