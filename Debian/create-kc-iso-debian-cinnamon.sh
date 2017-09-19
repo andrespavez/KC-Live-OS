@@ -166,26 +166,22 @@ install -m 755 -d $SFR/opt/Keyper
 install -m 755 -d $SFR/opt/Keyper/bin
 install -m 755 -d $SFR/opt/Keyper/PKCS11Provider
 install -m 755 -d $SFR/opt/Keyper/docs
-install -m 755 -d $SFR/opt/Keyper/win32
 install -p -m 555 ./opt/Keyper/bin/*              $SFR/opt/Keyper/bin
 install -p -m 444 ./opt/Keyper/PKCS11Provider/*   $SFR/opt/Keyper/PKCS11Provider
 install -p -m 444 ./opt/Keyper/docs/*             $SFR/opt/Keyper/docs
-install -p -m 444 ./opt/Keyper/win32/*            $SFR/opt/Keyper/win32
 
 # ICANN Software & Scripts
 echo "Instaling ICANN Software and Scripts"
 install -m 755 -d $SFR/opt/icann
 install -m 755 -d $SFR/opt/icann/bin
 install -m 755 -d $SFR/opt/icann/dist
-install -p -m 555 ./opt/icann/bin/* $SFR/opt/icann/bin
-install -p -m 555 ./opt/icann/dist/* $SFR/opt/icann/dist
+install -p -m 555 ./opt/icann/bin/*   $SFR/opt/icann/bin
+install -p -m 555 ./opt/icann/dist/*  $SFR/opt/icann/dist
 
 # DNSSEC Configurations Files
 echo "Instaling DNSSEC Configurations Files"
 install -m 755 -d $SFR/opt/dnssec
-install -p -m 444 ./opt/dnssec/fixenv      $SFR/opt/dnssec
-install -p -m 444 ./opt/dnssec/machine     $SFR/opt/dnssec
-install -p -m 444 ./opt/dnssec/*.hsmconfig $SFR/opt/dnssec
+install -p -m 444 ./opt/dnssec/*    $SFR/opt/dnssec
 
 # Profile
 # File created as ROOT
