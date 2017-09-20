@@ -179,7 +179,7 @@ install -p -m 444 ./opt/dnssec/*    $SFR/opt/dnssec
 
 # Profile
 # File created as ROOT
-echo "export PATH=.:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d/kc.sh
+echo "export PATH=:/opt/icann/bin:/opt/Keyper/bin:\$PATH" >> $SFR/etc/profile.d/kc.sh
 
 # Serial
 # File created as ROOT
