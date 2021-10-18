@@ -4,6 +4,14 @@ Key Ceremony Live Operating System
 
 Ceremony | ICANN Keytools Version         | OS/DVD Version
 -------- | ------------------------------ | -----------------
+KSK 43	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 42	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 41	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 40	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 39	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 38	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 37	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
+KSK 36	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso
 KSK 35	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso  
 KSK 34	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso  
 KSK 33	 | icann-keytools-20170403.tar.gz | KC-20170403.iso  
