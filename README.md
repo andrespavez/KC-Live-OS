@@ -4,6 +4,10 @@ Key Ceremony Live Operating System
 
 Ceremony | ICANN Keytools Version         | OS DVD Version       | OS DVD SHA-256 Hash
 -------- | ------------------------------ | -------------------- | ----------------------------------------------------------------
+KSK 51	 | kskm_0.0.1_efd2237 | coen-1.0.0-amd64.iso | 405d7c76c114feb93fcc5345e13850e59d86341a08161207d8eb8c395410c13a
+KSK 50	 | kskm_0.0.1_efd2237 | coen-1.0.0-amd64.iso | 405d7c76c114feb93fcc5345e13850e59d86341a08161207d8eb8c395410c13a
+KSK 49	 | kskm_0.0.1_efd2237 | coen-1.0.0-amd64.iso | 405d7c76c114feb93fcc5345e13850e59d86341a08161207d8eb8c395410c13a
+KSK 48	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso | 8105b885b176741d25ef9d391c6a302aed3f6c916093a621a865cb90d560774f
 KSK 47	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso | 8105b885b176741d25ef9d391c6a302aed3f6c916093a621a865cb90d560774f
 KSK 46	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso | 8105b885b176741d25ef9d391c6a302aed3f6c916093a621a865cb90d560774f
 KSK 45	 | icann-keytools-20170403.tar.gz | coen-0.4.0-amd64.iso | 8105b885b176741d25ef9d391c6a302aed3f6c916093a621a865cb90d560774f
